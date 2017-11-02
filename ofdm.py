@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
@@ -5,7 +7,14 @@ from scipy.io.wavfile import write
 from scipy import signal
 
 
-"""FALTA"""
+"""Transceiver OFDM"""
+"""
+Se agregó correción de sincronía de FFT, falta mejorarla
+"""
+"""
+FALTA:	- Estimacion de canal (pilotos).
+	- Proponer canal acústico.
+"""
 
 def s2p(x): # serial a paralelo
 	n = int(len(x)/2)
@@ -58,8 +67,6 @@ def raised(x, n, b): # b<0.7
 	rs3 = 0.5*(1 + np.cos(np.pi*(N3 - (len(x) - bns))/bns))
 	rs = np.concatenate((rs1, rs2, rs3))	
 	return rs*x
-
-
 
 
 # distancia entre portadoras
@@ -115,7 +122,7 @@ S = []
 # numero de simbolos OFDM a enviar
 k = 100
 # parametro raised cosine
-beta = 0.7 
+beta = 0.1
 # numero de muestras prefijos
 ene = 16 
 
@@ -204,7 +211,7 @@ plt.clf()
 ############################
 
 # ruido AWGN 
-nt = np.random.normal(loc=0, scale=0.12, size=len(S))
+nt = np.random.normal(loc=0, scale=1e-1, size=len(S))
 # potencia promedio del ruido
 noise_power = np.trapz(nt**2, tc)/1.5
 # potencia promedio de la senal
@@ -212,9 +219,11 @@ signal_power = np.trapz(S**2, tc)/1.5
 # snr promedio
 snr = 10*np.log10(signal_power/noise_power)
 print snr, 'dB'
+# canal
+h = 1
 # rudio + canal
 r = S + nt
-
+"""
 # plot espectral ruido
 plt.clf()
 plt.plot(np.fft.fftshift(np.fft.fftfreq(len(nt), d=dt)), fft(nt), linewidth=0.5)
@@ -238,7 +247,7 @@ plt.xlabel('Frecuencia Hz')
 plt.ylabel('Potencia dB')
 plt.title(r'Senal con ruido, snr '+str(np.around(snr, 0))+' dB')
 plt.show()
-
+"""
 #######################################################
 # Receptor
 #######################################################
@@ -247,28 +256,37 @@ plt.show()
 
 # selecciona una muestra aleatoria sobre la cual comenzar el removal. 
 t = int(np.random.uniform()*16)
+t = 16
+mu = np.arange(0, len(r), 1)
 
+block_fft = []
 for i in range(k):
 	# selecciona un bloque de largo 64 partiendo en t
-	block = r[t+96*i:t+96*i+64]
+	# arregla error de sincronizacion 
+	block = r[t+96*i:t+96*i+64]#*np.exp(-1j*2*np.pi*mu[t+96*i:t+96*i+64]/m)
 	# DFT
-	block_fft = np.fft.fft(block, n=len(block))
+	block_fft.append(np.fft.fft(block, n=len(block)))
 
 # grafica los simbolos en el espacio complejo
-
-plt.scatter([1, 1, -1, -1], [1, -1, 1, -1])
 for i in block_fft:
 	plt.scatter(np.real(i), np.imag(i), marker='.')
+plt.scatter([1, 1, -1, -1], [1, -1, 1, -1], color='black', marker='x')
 plt.xlabel('real')
 plt.ylabel('imaginaria')
 plt.title('Mapa de simbolos qpsk')
 plt.show()
 
-# grafica los pilotos en el espacio complejo 
+# actualiza pilotos por simetria DCO
+pilotos = np.concatenate((pilotos, [33, 41, 49, 57]))
 
-plt.scatter([1, 1, -1, -1], [1, -1, 1, -1])
-for i in block_fft[pilotos]:
-	plt.scatter(np.real(i), np.imag(i), marker='x')
+# grafica los pilotos en el espacio complejo + ceros 
+plt.scatter([1, 1, -1, -1], [1, -1, 1, -1], color='black')
+for i in block_fft:
+	plt.scatter(np.real(i[pilotos][0]), np.imag(i[pilotos][0]), marker='x', color='red')
+	plt.scatter(np.real(i[pilotos][1]), np.imag(i[pilotos][1]), marker='x', color='green')
+	plt.scatter(np.real(i[pilotos][2]), np.imag(i[pilotos][2]), marker='x', color='blue')
+	plt.scatter(np.real(i[pilotos][3]), np.imag(i[pilotos][3]), marker='x', color='orange')
+	plt.scatter(np.real(i[[0, 32]]), np.imag(i[[0, 32]]), marker='x', color='brown')
 plt.xlabel('real')
 plt.ylabel('imaginaria')
 plt.title('Mapa de simbolos qpsk pilotos')
