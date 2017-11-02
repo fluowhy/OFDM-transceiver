@@ -60,7 +60,7 @@ def raised(x, n, b): # b<0.7
 	return rs*x
 
 
-# fuente http://dspillustrations.com/pages/posts/misc/python-ofdm-example.html
+
 
 # distancia entre portadoras
 df = 100 
