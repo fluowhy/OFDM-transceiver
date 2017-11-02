@@ -12,52 +12,49 @@ from scipy import signal
 Se agregó correción de sincronía de FFT, falta mejorarla
 """
 """
-FALTA:	- Estimacion de canal (pilotos).
-	- Proponer canal acústico.
+FALTA:
+- Estimacion de canal (pilotos)
+- Proponer canal acústico.
 """
 
-def s2p(x): # serial a paralelo
-	n = int(len(x)/2)
-	xr = np.reshape(x,(n,2))
-	return xr
+
+def s2p(x):  # serial a paralelo
+    n = int(len(x)/2)
+    xr = np.reshape(x, (n, 2))
+    return xr
 
 
-def mapping(x, mapa): # mapea la info a qpsk
-	return np.array([mapa[tuple(xi)] for xi in x])
+def mapping(x, mapa):  # mapea la info a qpsk
+    return np.array([mapa[tuple(xi)] for xi in x])
 
 
-def win(nw, x): # x: simbolo + cp, nw:muestras de ventana
-	nx = x.size
-	n1 = np.arange(0, nw, 1) 
-	n3 = np.arange(nw + nx, 2*nw + nx, 1)
-	w1 = 0.5*(1 - np.cos(np.pi*n1/nw))
-	w2 = x
-	w3 = 0.5*(1 - np.cos(np.pi*(n3 - 2*nw - nx)/nw))
-	w = np.concatenate((w1, w2, w3))
-	return w
-
-
-def plot(x, y):
-	plt.plot(x, y)
-	plt.show()
-	return
+def win(nw, x):  # x: simbolo + cp, nw:muestras de ventana
+    nx = x.size
+    n1 = np.arange(0, nw, 1)
+    n3 = np.arange(nw + nx, 2*nw + nx, 1)
+    w1 = 0.5*(1 - np.cos(np.pi*n1/nw))
+    w2 = x
+    w3 = 0.5*(1 - np.cos(np.pi*(n3 - 2*nw - nx)/nw))
+    w = np.concatenate((w1, w2, w3))
+    return w
 
 
 def fft(x):
-	xf = np.fft.fft(x)
-	xmax = np.max(np.abs(xf))
-	y = np.fft.fftshift(20*np.log10(np.abs(xf)/xmax))
-	return y
+    xf = np.fft.fft(x)
+    xmax = np.max(np.abs(xf))
+    y = np.fft.fftshift(20*np.log10(np.abs(xf)/xmax))
+    return y
+
 
 # agrega prefijo final y comienzo, x senal, n numero de muestras
 def prefix(x, n):
-	a1 = x[0:n]
-	a2 = x[-1*n:]
-	X = np.concatenate((a2, x, a1))
-	return X
+    a1 = x[0:n]
+    a2 = x[-1*n:]
+    X = np.concatenate((a2, x, a1))
+    return X
 
 
-def raised(x, n, b): # b<0.7
+def raised(x, n, b):  # b<0.7
 	ns = len(x) - 2*n
 	bns = int(np.rint(b*ns))
 	N1 = np.arange(0, bns, 1.)
@@ -107,7 +104,6 @@ datos = np.delete(datos, 0)
 """
 hann = signal.hann(m) # window con m muestras
 nuttall = signal.nuttall(m)
-
 nombre = 'hann'
 if nombre=='hann':
 	window = hann
@@ -165,18 +161,14 @@ tc = np.linspace(0, Tfft/64*9600, 9600)
 """
 cc = np.cos(2*np.pi*fc*tc)
 cs = np.sin(2*np.pi*fc*tc)
-
 sim = s_i*cc
 sqm = s_q*cs
-
 sm = sim
-
 plt.clf()
 plt.plot(S, linewidth=0.5)
 plt.plot(cc, linewidth=0.5)
 plt.plot(sim, linewidth=0.5)
 plt.show()
-
 plt.clf()
 plt.plot(np.fft.fftshift(np.fft.fftfreq(len(cc), d=1./1000)), fft(cc), linewidth=0.5)
 plt.ylim([-140, 0])
@@ -200,8 +192,6 @@ print nr
 s = np.repeat(S, nr) # DAC, repite simbolos de manera que se muestree segun frecuencia del DAC fs
 b = signal.firwin(200, 3200, window='hann',nyq=fs/2) # coef filtro
 sf = signal.convolve(s, b, mode='same', method='direct') # senal filtrada
-
-
 plt.clf()
 #plt.plot(np.fft.fftshift(np.fft.fftfreq(len(S), d=Tfft*k/len(S))), fft(S), linewidth=0.5)
 #plt.show()
@@ -231,7 +221,6 @@ plt.xlabel('Frecuencia Hz')
 plt.ylabel('Potencia dB')
 plt.title('Ruido')
 plt.show()
-
 # plot espectral senal OFDM
 plt.clf()
 plt.plot(np.fft.fftshift(np.fft.fftfreq(len(S), d=dt)), fft(S), linewidth=0.5)
@@ -239,7 +228,6 @@ plt.xlabel('Frecuencia Hz')
 plt.ylabel('Potencia dB')
 plt.title(r'Senal')
 plt.show()
-
 # plot espectral senal OFDM + canal
 plt.clf()
 plt.plot(np.fft.fftshift(np.fft.fftfreq(len(r), d=dt)), fft(r), linewidth=0.5)
