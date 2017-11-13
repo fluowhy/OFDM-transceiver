@@ -178,9 +178,9 @@ elif nombre=='rect':
 # crea vector temporal OFDM
 S = []
 # numero de simbolos OFDM a enviar
-k = 1
+k = 100
 # parametro raised cosine
-beta = 0.4
+beta = 0.1 #<= 0.7
 # numero de muestras prefijos
 ene = 16
 # vector de simbolos enviados 
@@ -285,7 +285,7 @@ vec_snr = np.arange(-10, 31, 1)
 BER = []
 # selecciona una muestra aleatoria sobre la cual comenzar el removal. 
 t = int(np.random.uniform()*ene)
-#t = 16
+t = input('t') #16
 print 'FFT time synchronization error:', 16 - t, 'muestras'
 # pilotos y nulls
 pilotos = np.concatenate((pilotos, [33, 41, 49, 57]))
@@ -347,7 +347,7 @@ for snr in vec_snr:
 	plt.clf()
 	for i in range(k):
 		# selecciona un bloque de largo m=64 partiendo en t
-		# arregla error de sincronizacion 
+		# arregla error de sincronizacion
 		block = r[t+(m + ene)*i:t+(m + ene)*i+m]
 		# DFT
 		blockfft = np.fft.fft(block, n=m)
@@ -359,29 +359,29 @@ for snr in vec_snr:
 		#X = np.diag(SN[i][pilotos])
 		#Y = blockfft[pilotos]
 		#H = LMS(Y, X)
-		#H = blockfft[pilotos]/SN[i, pilotos]		
+		H = blockfft[pilotos]/SN[i, pilotos]		
 		# interpola el canal
-		#fi, Hi = inter(H, pilotos1, freq)
+		fi, Hi = inter(H, pilotos1, freq)
 		#H=H/np.sqrt(np.real(np.dot(H, np.conj(H))))
 		# decide simbolos
 		# arg de los no nulls
-		#arg = np.delete(np.arange(0, 64, 1), [0, 32])
-		#blockfft[arg] = blockfft[arg]/Hi	
+		arg = np.delete(np.arange(0, 64, 1), [0, 32])
+		blockfft[arg] = blockfft[arg]/Hi	
 		block_fft.append(DEC(sim, blockfft))
 		
 			
 	block_fft = np.array(block_fft)
 	block_fft_raw = np.array(block_fft_raw)
-	
+	"""
 	# grafica los simbolos en el espacio complejo
 	plt.clf()
 	plt.scatter(np.real(block_fft_raw)[:,datos1], np.imag(block_fft_raw)[:,datos1], marker='+', linewidth=0.5)
 	plt.scatter([1, 1, -1, -1], [1, -1, 1, -1], color='black', marker='x')
 	plt.xlabel('real')
 	plt.ylabel('imaginaria')
-	plt.title('Mapa de simbolos qpsk')
+	plt.title('Mapa de simbolos qpsk SNR = '+str(snr)+r' dB $\beta$ = '+str(beta))
 	plt.savefig('/home/mauricio/Documents/Uni/OFDM/Images/symbols_'+str(snr))
-	
+	"""
 	# determina bits erroneos
 	datos_tot = np.delete(np.arange(0, 64, 1), pilotos)
 	# selecciona carriers de datos
@@ -395,10 +395,12 @@ for snr in vec_snr:
 	ber_avg = np.mean(ber_per_symbol)
 	BER.append(ber_avg)
 BER = np.array(BER)
+np.savetxt('BER_t_'+str(16-t), BER)
 plt.clf()
-plt.semilogy(vec_snr, BER, marker='x')
+plt.scatter(vec_snr, BER, marker='x')
 plt.xlabel('SNR dB')
 plt.ylabel('BER')
+plt.title(r'BER $\beta = $'+str(beta))
 plt.grid()
 plt.show()
 
@@ -425,7 +427,6 @@ plot impulso
 
 plt.stem(datos*1e-1, np.ones(len(datos)), 'b', markerfmt='bo', label='datos', basefmt=" ")
 """
-
 
 
 
